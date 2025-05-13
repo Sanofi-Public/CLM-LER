@@ -1,0 +1,4 @@
+validation_set_fraction: 0.0010 # what fraction of the dataset to monitor for early stopping.
+training_partition_size: 256 # how many partitions to use for training (and testing).
+validation_partition_size: 12 # how many partitions to use for validation.
+person_id_column: "PERSON_ID"

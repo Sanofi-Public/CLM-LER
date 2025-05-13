@@ -1,0 +1,36 @@
+learning_rate: 0.00005
+batch_size: 4
+gradient_accumulation_steps: 1
+eval_batch_size: 4
+hidden_size: 768
+num_hidden_layers: 12
+num_attention_heads: 12
+model_flavour: "bert"
+eval_steps: 3000 # how many batches until one run over the validation set
+prediction_fraction: 0.15 # how many tokens to use for masked language modelling
+masking_fraction: 0.8 # how many of the masked language modelling tokens to replace with the mask token
+random_replacement_fraction: 0.1 # how many of the tokens for maksed language modelling to replace with random words
+minimum_number_of_tokens: 20 # the smallest number of tokens allowed in the training data
+num_training_epochs: 5
+max_position_embeddings: 1825 # five years worth of data
+min_history_size: 20 # the smallest length of medical history to be used for training.
+weight_decay: 0.001 # the weight decay 
+hidden_dropout_prob: 0.15  # Hidden layer dropout
+attention_probs_dropout_prob: 0.15  # Attention dropout
+training_partition_size: 256
+validation_partition_size: 12
+early_stop_metric: "eval_loss"
+early_stop_patience: 30
+validation_set_fraction: 0.0015 # what fraction of the dataset to monitor for early stopping
+override_maxlen: 512 # accept lengths up to this amount
+#tokens_kept_fraction: 0.9995 # keep enough tokens in the vocabulary so that 99.999% of seen tokens are known by the model. This keeps the model from bloating with a vocab too large.
+vocabulary_size: 160000
+logging_steps: 250 # log the metrics every 500 training steps
+bf16: False # reduce memory usage. This runs out of memory fairly quickly.
+num_dataloader_workers: 5
+fp16: True # reduce memory usage. This runs out of memory fairly quickly.
+warmup_steps: 0.05 # how many epochs to spend warming up the learning rate
+early_stopping_delay: 0.0 # how many epochs to wait until starting to use early stopping.
+split_percentile_tokens: True # whether to use token-type-ids to handle percentiles
+percentile_count: 10 # how many tokens to use to handle lab-test percentiles.
+position_embedding_type: relative_key_query # the type of positional embedding to use

@@ -1,0 +1,6 @@
+base_data_directory: ''
+patient: '<some-path-to-table>'
+diagnosis: '<some-path-to-table>'
+prescription: '<some-path-to-table>'
+procedure: '<some-path-to-table>'
+lab: '<some-path-to-table>'

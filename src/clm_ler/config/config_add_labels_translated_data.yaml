@@ -1,0 +1,18 @@
+
+medical_events_select_expr:
+  - patient_id
+  - start
+  - vocab_token
+
+# ["Race", "Gender", "Ethnicity"]
+medical_events_filter_expr: 1=1
+
+demographics_select_expr:
+  - "person_id"
+  - "SPLIT(px_gender, ':')[1] as px_gender"
+  - "SPLIT(px_race, ':')[1] as px_race"
+  - "px_birth_date"
+  - "SPLIT(px_ethnicity, ':')[1] as px_ethnicity"
+  - "NULL as px_region"
+
+demographics_filter_expr: 1=1

@@ -1,0 +1,23 @@
+train_batch_size: 8
+accumulation_steps: 2
+logging_steps: 10 # every 10 gradient descent steps
+epochs: 60
+learning_rate:
+  - 0.00003
+  - 0.00001
+  - 0.000003
+max_sequence_length: 512
+eval_steps: 1
+
+tuneable_parameters:
+  - learning_rate
+  - max_proportion
+
+max_proportion: 
+  - 1
+  - 5
+
+fp16: True
+
+early_stopping_patience: 3
+eval_batch_size: 64

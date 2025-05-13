@@ -1,0 +1,11 @@
+pre-commit
+jupyter
+ipykernel
+ipython==8.10.0
+pytest
+pytest-cov
+pytest-mock
+testresources
+pylint
+black
+pyspark-test

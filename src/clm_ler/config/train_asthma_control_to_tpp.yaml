@@ -1,0 +1,29 @@
+######### label generation #########
+join_column_name: person_id
+
+# filter which rows to keep
+inclusion_criteria: endpt_bl_controlled_flag = 1
+
+# select which rows belong to the positive class
+positive_class_criteria: CASE WHEN endpt_fl_tpp1_flag = 1 or endpt_fl_tpp2_flag = 1 THEN 1 ELSE 0 END
+
+######### train/val/test splitting #########
+word_match: "train" # this word is used to find the upstream data of the model. The upstream artifact with the word "train" will be used as the training dataset in the train/test/valid splitting script.
+train_ratio: 0.7
+validation_ratio: 0.15
+test_ratio: 0.15
+separate_pos_neg_classes: True
+
+######### training #########
+training_label: "label"
+proportions_per_label:
+  - 1 # class 0
+  - 1 # class 1
+  # - 1 class 2, if available
+number_epochs: 50
+learning_rate: 0.000003
+metric_for_best_model: "eval_roc_auc_1_vs_rest"
+eval_step_fraction: 0.5 # what fraction of an epoch to use for evaluation. 0.5 means 2 evals per epoch
+training_batch_size: 16
+early_stopping_patience: 8
+training_logging_steps: 5

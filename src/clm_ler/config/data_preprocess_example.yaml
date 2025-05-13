@@ -1,0 +1,83 @@
+tables:
+  patient: # as we need all columns, no select_expr provided here.
+    select_expr:
+      - "CAST(PERSON_ID AS BIGINT) AS person_id"
+      - "YEAR_OF_BIRTH || '-' || MONTH_OF_BIRTH || '-' || DAY_OF_BIRTH AS px_birth_date_raw"
+      - "TO_TIMESTAMP(px_birth_date_raw, 'yyyy-MM-dd') as px_birth_date"
+      - "RACE_SOURCE_VALUE AS px_race"
+      - "ETHNICITY_SOURCE_VALUE AS px_ethnicity"
+      - "GENDER_SOURCE_VALUE AS px_gender"
+      - LOCATION_ID as px_region
+    filter_expr: "person_id IS NOT NULL"
+  diagnosis:
+    select_expr:
+      - "CAST(PERSON_ID AS BIGINT) AS person_id"
+      - "TO_TIMESTAMP(CONDITION_START_DATETIME, 'yyyy-MM-dd HH:mm:SS') as date"
+      - "SPLIT(CONDITION_SOURCE_VALUE, ' ')[1] as dx_diagnosis_code"
+      - "CASE 
+            WHEN SPLIT(CONDITION_SOURCE_VALUE, ' ')[0] = 'ICD-10-CM' THEN 'ICD10CM' 
+            WHEN SPLIT(CONDITION_SOURCE_VALUE, ' ')[0] = 'ICD-10-PCS' THEN 'ICD10PCS' 
+            WHEN SPLIT(CONDITION_SOURCE_VALUE, ' ')[0] = 'RxNorm_drug' THEN 'RXNORM' 
+            WHEN SPLIT(CONDITION_SOURCE_VALUE, ' ')[0] = 'RxNorm' THEN 'RXNORM' 
+            WHEN SPLIT(CONDITION_SOURCE_VALUE, ' ')[0] = 'ICD-9-CM' THEN 'ICD9CM' 
+            WHEN SPLIT(CONDITION_SOURCE_VALUE, ' ')[0] = 'NAACCR' THEN 'NAACCR'
+            ELSE SPLIT(CONDITION_SOURCE_VALUE, ' ')[0]
+        END as dx_diagnosis_code_type"
+    filter_expr: "dx_diagnosis_code IS NOT NULL and dx_diagnosis_code_type IS NOT NULL"
+  prescription:
+    select_expr: 
+      - "CASE 
+            WHEN CONTAINS(DRUG_SOURCE_VALUE, ' ') THEN SPLIT(DRUG_SOURCE_VALUE, ' ')[0]
+            WHEN CONTAINS(DRUG_SOURCE_VALUE, ':') THEN SPLIT(DRUG_SOURCE_VALUE, ':')[0]
+            ELSE NULL
+          END as rx_raw_prescription_code_type"
+      - "CASE 
+            WHEN CONTAINS(DRUG_SOURCE_VALUE, ' ') THEN SPLIT(DRUG_SOURCE_VALUE, ' ')[1]
+            WHEN CONTAINS(DRUG_SOURCE_VALUE, ':') THEN SPLIT(DRUG_SOURCE_VALUE, ':')[1]
+            ELSE NULL
+          END as rx_raw_prescription_code"
+      # ICD9Proc are contained within ICD9CM in UMLS.
+      - "CASE
+            WHEN rx_raw_prescription_code_type = 'RxNorm_drug' THEN 'RXNORM'
+            WHEN rx_raw_prescription_code_type = 'CPT4' THEN 'CPT'
+            WHEN rx_raw_prescription_code_type = 'ICD9Proc' THEN 'ICD9CM' 
+            ELSE rx_raw_prescription_code_type
+          END as rx_prescription_code_type"
+      - "CASE
+            WHEN rx_prescription_code_type = 'NDC' THEN SUBSTRING(rx_raw_prescription_code, 1, 9)
+            ELSE rx_raw_prescription_code
+          END AS rx_prescription_code"
+      - CAST(PERSON_ID AS BIGINT) as person_id
+      - "TO_TIMESTAMP(DRUG_EXPOSURE_START_DATETIME, 'yyyy-MM-dd HH:mm:SS') as date"
+    filter_expr: rx_prescription_code IS NOT NULL and rx_prescription_code_type IS NOT NULL
+  procedure:
+    select_expr:
+      - CAST(PERSON_ID AS BIGINT) as person_id
+      - "CASE 
+            WHEN SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[0] = 'ICD-9-CM' THEN 'ICD9CM'
+            WHEN SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[0] = 'ICD-10-CM' THEN 'ICD10CM'
+            ELSE SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[0]
+          END AS pr_procedure_code_type"
+      - SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[1] AS pr_procedure_code
+      - "TO_TIMESTAMP(MEASUREMENT_DATETIME, 'yyyy-MM-dd HH:mm:SS') as date"
+    filter_expr: pr_procedure_code_type IS NOT NULL and pr_procedure_code IS NOT NULL and (pr_procedure_code_type != 'LOINC' and pr_procedure_code_type != 'TNX')
+  lab:
+    select_expr:
+      - CAST(PERSON_ID AS BIGINT) as person_id
+      - "CASE 
+            WHEN SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[0] = 'ICD-9-CM' THEN 'ICD9CM'
+            WHEN SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[0] = 'ICD-10-CM' THEN 'ICD10CM'
+            ELSE SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[0]
+          END AS lx_lab_code_type"
+      - VALUE_AS_NUMBER AS lx_result_val
+      - UNIT_SOURCE_VALUE AS lx_result_unit
+      - SPLIT(MEASUREMENT_SOURCE_VALUE, ' ')[1] AS lx_lab_code
+      - "TO_TIMESTAMP(MEASUREMENT_DATETIME, 'yyyy-MM-dd HH:mm:SS') as date"
+    filter_expr:  lx_lab_code IS NOT NULL and (lx_lab_code_type = 'LOINC' or lx_lab_code_type = 'TNX') and (lx_result_val IS NOT NULL and lx_result_unit IS NOT NULL)
+
+number_of_days_threshold: 365
+event_date_filter: (date >= TO_TIMESTAMP('2012-01-01', 'yyyy-MM-dd') and date <= TO_TIMESTAMP('2300-12-31', 'yyyy-MM-dd'))
+partition_column: PERSON_ID
+
+min_loinc_counts: 100 # the loinc code has to occur at least 100 times
+min_loinc_value_counts: 100 # there has to be at least 100 unique values for a test to be included.
